@@ -1,0 +1,123 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  USER
+  ADMIN
+}
+
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  password  String
+  role      Role     @default(USER)
+  isActive  Boolean  @default(true)
+  deletedAt DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  profile Profile?
+  posts    Post[]
+  followers Follow[] @relation("Follower")
+  following Follow[] @relation("Following")
+
+  @@map("users")
+}
+
+model Profile {
+  id            String          @id @default(uuid())
+  userId        String          @unique
+  name          String
+  bio           String?
+  contactInfo   String?
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+
+  user          User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  education    Education[]
+  workExperience WorkExperience[]
+  skills        Skill[]
+
+  @@map("profiles")
+}
+
+model Education {
+  id          String   @id @default(uuid())
+  profileId   String
+  institution String
+  degree      String?
+  field       String?
+  startDate   DateTime?
+  endDate     DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  profile     Profile  @relation(fields: [profileId], references: [id], onDelete: Cascade)
+
+  @@map("educations")
+}
+
+model WorkExperience {
+  id          String   @id @default(uuid())
+  profileId   String
+  company     String
+  position    String
+  description String?
+  startDate   DateTime?
+  endDate     DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  profile     Profile  @relation(fields: [profileId], references: [id], onDelete: Cascade)
+
+  @@map("work_experiences")
+}
+
+model Skill {
+  id        String   @id @default(uuid())
+  profileId String
+  name      String
+  level     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  profile   Profile  @relation(fields: [profileId], references: [id], onDelete: Cascade)
+
+  @@map("skills")
+}
+
+model Follow {
+  id          String   @id @default(uuid())
+  followerId  String
+  followingId String
+  createdAt   DateTime @default(now())
+
+  follower    User     @relation("Follower", fields: [followerId], references: [id], onDelete: Cascade)
+  following   User     @relation("Following", fields: [followingId], references: [id], onDelete: Cascade)
+
+  @@unique([followerId, followingId])
+  @@map("follows")
+}
+
+model Post {
+  id        String   @id @default(uuid())
+  authorId  String
+  content   String
+  deletedAt DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  author    User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
+
+  @@map("posts")
+}
+
